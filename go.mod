@@ -1,0 +1,1 @@
+module subscription-aggregator
