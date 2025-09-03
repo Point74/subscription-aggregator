@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"log/slog"
@@ -81,6 +82,34 @@ func (s *Storage) Delete(ctx context.Context, id string) error {
 	s.logger.Info("Subscription deleted successfully", "ID", id)
 	return nil
 
+}
+
+func (s *Storage) GetByID(ctx context.Context, id string) (*models.Subscription, error) {
+	sql := `SELECT id, service_name, price, user_ID, start_date, end_date FROM subscriptions WHERE id = $1`
+
+	var sub models.Subscription
+	err := s.database.QueryRow(ctx, sql, id).Scan(
+		&sub.ID,
+		&sub.ServiceName,
+		&sub.Price,
+		&sub.UserID,
+		&sub.StartDate,
+		&sub.EndDate,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			s.logger.Error("Failed to find subscription", "error", err, "id", id)
+			return nil, db.ErrNotFound
+		}
+
+		s.logger.Error("Failed to get subscription", "error", err)
+		return nil, fmt.Errorf("failed to get subscription by id: %w", err)
+	}
+
+	s.logger.Info("Subscription found successfully", "ID", id)
+
+	return &sub, nil
 }
 
 func (s *Storage) Close(ctx context.Context) error {

@@ -46,8 +46,9 @@ func main() {
 	})
 
 	router.Route("/subscriptions", func(r chi.Router) {
-		r.Post("/", subscriptionHandler.CreateSubscriptionsHandler)
-		r.Delete("/{id}", subscriptionHandler.DeleteSubscriptionsHandler)
+		r.Post("/", subscriptionHandler.CreateSubscription)
+		r.Delete("/{id}", subscriptionHandler.DeleteSubscription)
+		r.Get("/{id}", subscriptionHandler.GetSubscriptionByID)
 
 	})
 

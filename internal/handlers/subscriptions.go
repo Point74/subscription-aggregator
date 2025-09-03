@@ -23,7 +23,7 @@ func NewSubscriptionsHandler(storage *postgres.Storage, log *slog.Logger) *Subsc
 	}
 }
 
-func (h *SubscriptionsHandler) CreateSubscriptionsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *SubscriptionsHandler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	var req models.SubscriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -36,11 +36,15 @@ func (h *SubscriptionsHandler) CreateSubscriptionsHandler(w http.ResponseWriter,
 		return
 	}
 
+	reqID := middleware.GetReqID(r.Context())
+
 	if err := h.storage.Save(r.Context(), updateRequest); err != nil {
-		h.log.Error("could not save subscription", "error", err)
+		h.log.Error("could not save subscription", "error", err, "subscription_id", updateRequest.ID, "request_id", reqID)
 		http.Error(w, "could not save subscription", http.StatusInternalServerError)
 		return
 	}
+
+	h.log.Info("Successfully saved subscription", "subscription_id", updateRequest.ID, "request_id", reqID)
 
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(&req); err != nil {
@@ -48,7 +52,7 @@ func (h *SubscriptionsHandler) CreateSubscriptionsHandler(w http.ResponseWriter,
 	}
 }
 
-func (h *SubscriptionsHandler) DeleteSubscriptionsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *SubscriptionsHandler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	subID := chi.URLParam(r, "id")
 	if subID == "" {
 		http.Error(w, "no subscription ID", http.StatusBadRequest)
@@ -66,4 +70,28 @@ func (h *SubscriptionsHandler) DeleteSubscriptionsHandler(w http.ResponseWriter,
 	h.log.Info("Successfully deleted subscription", "subscription_id", subID, "request_id", reqID)
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *SubscriptionsHandler) GetSubscriptionByID(w http.ResponseWriter, r *http.Request) {
+	subID := chi.URLParam(r, "id")
+	if subID == "" {
+		http.Error(w, "no subscription ID", http.StatusBadRequest)
+		return
+	}
+
+	reqID := middleware.GetReqID(r.Context())
+
+	result, err := h.storage.GetByID(r.Context(), subID)
+	if err != nil {
+		h.log.Error("could not get subscription", "error", err, "subscription_id", subID, "request_id", reqID)
+		http.Error(w, "could not get subscription", http.StatusInternalServerError)
+		return
+	}
+
+	h.log.Info("Successfully get subscription", "subscription_id", subID, "request_id", reqID)
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(&result); err != nil {
+		h.log.Error("failed to write response", "error", err, "subscription_id", subID, "request_id", reqID)
+	}
 }

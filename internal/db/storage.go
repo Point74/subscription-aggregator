@@ -9,6 +9,7 @@ import (
 type SubscriptionStorage interface {
 	Save(ctx context.Context, sub *models.Subscription) error
 	Delete(ctx context.Context, id string) error
+	GetByID(ctx context.Context, id string) (*models.Subscription, error)
 }
 
 var (
