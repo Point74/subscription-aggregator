@@ -50,7 +50,7 @@ func main() {
 		r.Delete("/{id}", subscriptionHandler.DeleteSubscription)
 		r.Get("/{id}", subscriptionHandler.GetSubscriptionByID)
 		r.Get("/", subscriptionHandler.ListSubscriptionsByUserID)
-
+		r.Put("/{id}", subscriptionHandler.UpdateSubscription)
 	})
 
 	log.Info("Service start on port :8080")

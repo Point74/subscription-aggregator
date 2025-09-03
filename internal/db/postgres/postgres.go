@@ -153,6 +153,34 @@ func (s *Storage) List(ctx context.Context, userID string) ([]*models.Subscripti
 	return subs, nil
 }
 
+func (s *Storage) Update(ctx context.Context, sub *models.Subscription) error {
+	sql := `UPDATE subscriptions SET service_name = $1, price = $2, user_ID = $3, start_date = $4, end_date = $5 WHERE id = $6`
+
+	result, err := s.database.Exec(
+		ctx,
+		sql,
+		sub.ServiceName,
+		sub.Price,
+		sub.UserID,
+		sub.StartDate,
+		sub.EndDate,
+		sub.ID,
+	)
+	if err != nil {
+		s.logger.Error("Failed to update subscription", "error", err)
+		return fmt.Errorf("failed to update subscription: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		s.logger.Error("Failed to find subscription for update", "error", err, "id", sub.ID)
+		return db.ErrNotFound
+	}
+
+	s.logger.Info("Subscription updated successfully", "ID", sub.ID)
+
+	return nil
+}
+
 func (s *Storage) Close(ctx context.Context) error {
 	if s.database != nil {
 		return s.database.Close(ctx)

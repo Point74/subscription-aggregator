@@ -32,7 +32,7 @@ func (h *SubscriptionsHandler) CreateSubscription(w http.ResponseWriter, r *http
 
 	updateRequest, err := utils.MapRequest(req, h.log, r)
 	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		http.Error(w, "invalid request data", http.StatusBadRequest)
 		return
 	}
 
@@ -48,7 +48,9 @@ func (h *SubscriptionsHandler) CreateSubscription(w http.ResponseWriter, r *http
 
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(&req); err != nil {
-		h.log.Error("failed to write response", "error", err, "request_id", updateRequest.ID)
+		h.log.Error("failed to write response", "error", err, "subscription_id", updateRequest.ID, "request_id", reqID)
+		http.Error(w, "failed to write response", http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -117,5 +119,42 @@ func (h *SubscriptionsHandler) ListSubscriptionsByUserID(w http.ResponseWriter, 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(&result); err != nil {
 		h.log.Error("failed to write response", "error", err, "user_id", userID, "request_id", reqID)
+	}
+}
+
+func (h *SubscriptionsHandler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
+	subID := chi.URLParam(r, "id")
+	if subID == "" {
+		http.Error(w, "no subscription ID", http.StatusBadRequest)
+		return
+	}
+
+	var req models.SubscriptionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	updateRequest, err := utils.MapRequest(req, h.log, r)
+	if err != nil {
+		http.Error(w, "invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	updateRequest.ID = subID
+
+	reqID := middleware.GetReqID(r.Context())
+
+	if err := h.storage.Update(r.Context(), updateRequest); err != nil {
+		h.log.Error("could not update subscription", "error", err, "subscription_id", subID, "request_id", reqID)
+		http.Error(w, "could not update subscription", http.StatusInternalServerError)
+		return
+	}
+
+	h.log.Info("Successfully update subscription", "subscription_id", subID, "request_id", reqID)
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(&req); err != nil {
+		h.log.Error("failed to write response", "error", err, "subscription_id", subID, "request_id", reqID)
 	}
 }
