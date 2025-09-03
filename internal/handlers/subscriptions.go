@@ -95,3 +95,27 @@ func (h *SubscriptionsHandler) GetSubscriptionByID(w http.ResponseWriter, r *htt
 		h.log.Error("failed to write response", "error", err, "subscription_id", subID, "request_id", reqID)
 	}
 }
+
+func (h *SubscriptionsHandler) ListSubscriptionsByUserID(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, "no user ID", http.StatusBadRequest)
+		return
+	}
+
+	reqID := middleware.GetReqID(r.Context())
+
+	result, err := h.storage.List(r.Context(), userID)
+	if err != nil {
+		h.log.Error("could not get list subscriptions", "error", err, "user_id", userID, "request_id", reqID)
+		http.Error(w, "could not get list subscriptions", http.StatusInternalServerError)
+		return
+	}
+
+	h.log.Info("Successfully get list subscriptions", "user_id", userID, "request_id", reqID)
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(&result); err != nil {
+		h.log.Error("failed to write response", "error", err, "user_id", userID, "request_id", reqID)
+	}
+}

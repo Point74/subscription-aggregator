@@ -112,6 +112,47 @@ func (s *Storage) GetByID(ctx context.Context, id string) (*models.Subscription,
 	return &sub, nil
 }
 
+func (s *Storage) List(ctx context.Context, userID string) ([]*models.Subscription, error) {
+	sql := `SELECT id, service_name, price, user_id, start_date, end_date FROM subscriptions WHERE user_id = $1`
+
+	rows, err := s.database.Query(ctx, sql, userID)
+	if err != nil {
+		s.logger.Error("Failed to list subscriptions", "error", err, "user_id", userID)
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var subs []*models.Subscription
+	for rows.Next() {
+		var sub models.Subscription
+		scan := rows.Scan(
+			&sub.ID,
+			&sub.ServiceName,
+			&sub.Price,
+			&sub.UserID,
+			&sub.StartDate,
+			&sub.EndDate,
+		)
+
+		if err := scan; err != nil {
+			s.logger.Error("Failed to scan subscription row", "error", err, "user_id", userID)
+			return nil, err
+		}
+
+		subs = append(subs, &sub)
+	}
+
+	if err := rows.Err(); err != nil {
+		s.logger.Error("Error rows iterations", "error", err, "user_id", userID)
+		return nil, err
+	}
+
+	s.logger.Info("Subscriptions listed successfully", "user_id", userID)
+
+	return subs, nil
+}
+
 func (s *Storage) Close(ctx context.Context) error {
 	if s.database != nil {
 		return s.database.Close(ctx)

@@ -49,6 +49,7 @@ func main() {
 		r.Post("/", subscriptionHandler.CreateSubscription)
 		r.Delete("/{id}", subscriptionHandler.DeleteSubscription)
 		r.Get("/{id}", subscriptionHandler.GetSubscriptionByID)
+		r.Get("/", subscriptionHandler.ListSubscriptionsByUserID)
 
 	})
 
