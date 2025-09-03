@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"subscription-aggregator/internal/config"
+	"subscription-aggregator/internal/db"
 	"subscription-aggregator/internal/models"
 )
 
@@ -62,6 +63,24 @@ func (s *Storage) Save(ctx context.Context, sub *models.Subscription) error {
 	s.logger.Info("Subscription saved successfully", "ID", sub.ID)
 
 	return nil
+}
+
+func (s *Storage) Delete(ctx context.Context, id string) error {
+	sql := `DELETE FROM subscriptions WHERE id = $1`
+	result, err := s.database.Exec(ctx, sql, id)
+	if err != nil {
+		s.logger.Error("Failed to delete subscription", "error", err)
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		s.logger.Error("Failed to find subscription", "error", err, "id", id)
+		return db.ErrNotFound
+	}
+
+	s.logger.Info("Subscription deleted successfully", "ID", id)
+	return nil
+
 }
 
 func (s *Storage) Close(ctx context.Context) error {
