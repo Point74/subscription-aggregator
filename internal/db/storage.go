@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"subscription-aggregator/internal/models"
+	"time"
 )
 
 type SubscriptionStorage interface {
@@ -12,6 +13,8 @@ type SubscriptionStorage interface {
 	GetByID(ctx context.Context, id string) (*models.Subscription, error)
 	List(ctx context.Context, userID string) ([]*models.Subscription, error)
 	Update(ctx context.Context, sub *models.Subscription) error
+	SumTotalCost(ctx context.Context, userID string, serviceName string,
+		periodStart time.Time, periodEnd time.Time) (int, error)
 }
 
 var (

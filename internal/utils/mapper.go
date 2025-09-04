@@ -4,13 +4,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 	"log/slog"
-	"net/http"
 	"subscription-aggregator/internal/models"
 	"time"
 )
 
-func MapRequest(req models.SubscriptionRequest, log *slog.Logger, r *http.Request) (*models.Subscription, error) {
-	startDate, err := parseDate(req.StartDate)
+func MapRequest(req models.SubscriptionRequest, log *slog.Logger) (*models.Subscription, error) {
+	startDate, err := ParseDate(req.StartDate)
 	if err != nil {
 		log.Warn("failed to parse start date", "error", err)
 		return nil, err
@@ -19,7 +18,7 @@ func MapRequest(req models.SubscriptionRequest, log *slog.Logger, r *http.Reques
 	var endDate *time.Time
 
 	if req.EndDate != "" {
-		parseEndDate, err := parseDate(req.EndDate)
+		parseEndDate, err := ParseDate(req.EndDate)
 		if err != nil {
 			log.Warn("failed to parse end date", "error", err)
 			return nil, err

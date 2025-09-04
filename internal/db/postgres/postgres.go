@@ -9,6 +9,7 @@ import (
 	"subscription-aggregator/internal/config"
 	"subscription-aggregator/internal/db"
 	"subscription-aggregator/internal/models"
+	"time"
 )
 
 type Storage struct {
@@ -187,4 +188,44 @@ func (s *Storage) Close(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Storage) SumTotalCost(ctx context.Context, userID string, serviceName string, periodStart time.Time, periodEnd time.Time) (int, error) {
+	sql := `
+      WITH subs_in_period AS (
+       SELECT 
+         s.id, 
+         s.user_id, 
+         s.service_name, 
+         s.price, 
+         s.start_date, 
+         s.end_date, 
+         GREATEST(s.start_date, $1::date) AS actual_start, 
+         LEAST(COALESCE(s.end_date, $2::date), $2::date) AS actual_end
+       FROM subscriptions s
+       WHERE s.user_id = $3
+         AND s.service_name = $4
+         AND (s.end_date IS NULL OR s.end_date > $1::date)
+         AND s.start_date < $2::date
+      )
+      SELECT COALESCE(SUM(
+        price * GREATEST(0, (
+          EXTRACT(YEAR FROM date_trunc('month', actual_end - interval '1 day')) * 12 + 
+          EXTRACT(MONTH FROM date_trunc('month', actual_end - interval '1 day'))
+        ) - (
+          EXTRACT(YEAR FROM date_trunc('month', actual_start)) * 12 + 
+          EXTRACT(MONTH FROM date_trunc('month', actual_start))
+        ) + 1)
+      ), 0) AS total_cost
+      FROM subs_in_period
+      WHERE actual_start < actual_end;
+    `
+
+	var totalCost int64
+	row := s.database.QueryRow(ctx, sql, periodStart, periodEnd, userID, serviceName)
+	if err := row.Scan(&totalCost); err != nil {
+		return 0, err
+	}
+
+	return int(totalCost), nil
 }

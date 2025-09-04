@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func parseDate(date string) (time.Time, error) {
+func ParseDate(date string) (time.Time, error) {
 	if date == "" {
 		return time.Time{}, fmt.Errorf("date is empty")
 	}

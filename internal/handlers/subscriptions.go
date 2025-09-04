@@ -9,6 +9,7 @@ import (
 	"subscription-aggregator/internal/db/postgres"
 	"subscription-aggregator/internal/models"
 	"subscription-aggregator/internal/utils"
+	"time"
 )
 
 type SubscriptionsHandler struct {
@@ -30,7 +31,7 @@ func (h *SubscriptionsHandler) CreateSubscription(w http.ResponseWriter, r *http
 		return
 	}
 
-	updateRequest, err := utils.MapRequest(req, h.log, r)
+	updateRequest, err := utils.MapRequest(req, h.log)
 	if err != nil {
 		http.Error(w, "invalid request data", http.StatusBadRequest)
 		return
@@ -135,7 +136,7 @@ func (h *SubscriptionsHandler) UpdateSubscription(w http.ResponseWriter, r *http
 		return
 	}
 
-	updateRequest, err := utils.MapRequest(req, h.log, r)
+	updateRequest, err := utils.MapRequest(req, h.log)
 	if err != nil {
 		http.Error(w, "invalid request data", http.StatusBadRequest)
 		return
@@ -156,5 +157,61 @@ func (h *SubscriptionsHandler) UpdateSubscription(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(&req); err != nil {
 		h.log.Error("failed to write response", "error", err, "subscription_id", subID, "request_id", reqID)
+	}
+}
+
+func (h *SubscriptionsHandler) SumTotalCostSubscriptions(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, "no user ID", http.StatusBadRequest)
+		return
+	}
+
+	serviceName := r.URL.Query().Get("service_name")
+	if serviceName == "" {
+		http.Error(w, "no service name", http.StatusBadRequest)
+		return
+	}
+
+	var periodStart time.Time
+
+	perStart := r.URL.Query().Get("period_start")
+	if perStart != "" {
+		parseStartDate, err := utils.ParseDate(perStart)
+		if err != nil {
+			h.log.Error("failed to parse end date", "error", err)
+			return
+		}
+
+		periodStart = parseStartDate
+	}
+
+	var periodEnd time.Time
+
+	perEnd := r.URL.Query().Get("period_end")
+	if perEnd != "" {
+		parseEndDate, err := utils.ParseDate(perEnd)
+		if err != nil {
+			h.log.Error("failed to parse end date", "error", err)
+			return
+		}
+
+		periodEnd = parseEndDate
+	}
+
+	reqID := middleware.GetReqID(r.Context())
+
+	result, err := h.storage.SumTotalCost(r.Context(), userID, serviceName, periodStart, periodEnd)
+	if err != nil {
+		h.log.Error("could not get sum subscriptions", "error", err, "user_id", userID, "request_id", reqID)
+		http.Error(w, "could not get sum subscriptions", http.StatusInternalServerError)
+		return
+	}
+
+	h.log.Info("Successfully get sum subscriptions", "user_id", userID, "request_id", reqID)
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(&result); err != nil {
+		h.log.Error("failed to write response", "error", err, "user_id", userID, "request_id", reqID)
 	}
 }
