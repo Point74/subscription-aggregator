@@ -7,7 +7,7 @@ Subscription Aggregator - REST сервис для агрегации данны
 
 - **CRUDL операции** с подписками пользователей
 - **Расчет общей стоимости** подписок за период для конкретного сервиса
-- **Swagger документация** API `http://localhost:8080/swagger/`
+- **Swagger документация** API [http://localhost:8080/swagger/](http://localhost:8080/swagger/)
 - **Интеграция с PostgreSQL** для хранения данных
 
 ## Технический стек
