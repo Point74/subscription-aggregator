@@ -24,6 +24,16 @@ func NewSubscriptionsHandler(storage *postgres.Storage, log *slog.Logger) *Subsc
 	}
 }
 
+// CreateSubscription creates a new subscription.
+// @Summary Create a new subscription
+// @Description Creates a new user subscription. Dates must be in "MM-YYYY" format.
+// @Accept json
+// @Produce json
+// @Param subscription body models.SubscriptionRequest true "Subscription data"
+// @Success 201 {object} models.SubscriptionRequest "Subscription created successfully"
+// @Failure 400 {string} string "Invalid request body or data"
+// @Failure 500 {string} string "Could not save subscription"
+// @Router /subscriptions [post]
 func (h *SubscriptionsHandler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	var req models.SubscriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -55,6 +65,15 @@ func (h *SubscriptionsHandler) CreateSubscription(w http.ResponseWriter, r *http
 	}
 }
 
+// DeleteSubscription deletes a subscription by ID.
+// @Summary Delete a subscription
+// @Description Deletes a user's subscription record by its unique ID.
+// @Produce json
+// @Param id path string true "Subscription ID"
+// @Success 204 "No Content"
+// @Failure 400 {string} string "Invalid subscription ID"
+// @Failure 500 {string} string "Could not delete subscription"
+// @Router /subscriptions/{id} [delete]
 func (h *SubscriptionsHandler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	subID := chi.URLParam(r, "id")
 	if subID == "" {
@@ -75,6 +94,15 @@ func (h *SubscriptionsHandler) DeleteSubscription(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetSubscriptionByID get a subscription by ID.
+// @Summary Get a subscription by ID
+// @Description Get a user's subscription record by its unique ID.
+// @Produce json
+// @Param id path string true "Subscription ID"
+// @Success 200 {object} models.Subscription "Subscription found successfully"
+// @Failure 400 {string} string "Invalid subscription ID"
+// @Failure 500 {string} string "Could not get subscription"
+// @Router /subscriptions/{id} [get]
 func (h *SubscriptionsHandler) GetSubscriptionByID(w http.ResponseWriter, r *http.Request) {
 	subID := chi.URLParam(r, "id")
 	if subID == "" {
@@ -99,6 +127,15 @@ func (h *SubscriptionsHandler) GetSubscriptionByID(w http.ResponseWriter, r *htt
 	}
 }
 
+// ListSubscriptionsByUserID list of subscriptions for specific user.
+// @Summary Get subscriptions by user ID
+// @Description Get a list of all subscription records for a specific user.
+// @Produce json
+// @Param user_id query string true "User ID"
+// @Success 200 {array} models.Subscription "Subscriptions retrieved successfully"
+// @Failure 400 {string} string "No user ID"
+// @Failure 500 {string} string "Could not get list subscriptions"
+// @Router /subscriptions [get]
 func (h *SubscriptionsHandler) ListSubscriptionsByUserID(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
@@ -123,6 +160,17 @@ func (h *SubscriptionsHandler) ListSubscriptionsByUserID(w http.ResponseWriter, 
 	}
 }
 
+// UpdateSubscription updates an existing subscription.
+// @Summary Update an existing subscription
+// @Description Update an existing subscription record by its unique ID.
+// @Accept json
+// @Produce json
+// @Param id path string true "Subscription ID"
+// @Param subscription body models.SubscriptionRequest true "Updated subscription data"
+// @Success 200 {object} models.SubscriptionRequest "Subscription updated successfully"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 500 {string} string "Could not update subscription"
+// @Router /subscriptions/{id} [put]
 func (h *SubscriptionsHandler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	subID := chi.URLParam(r, "id")
 	if subID == "" {
@@ -160,6 +208,18 @@ func (h *SubscriptionsHandler) UpdateSubscription(w http.ResponseWriter, r *http
 	}
 }
 
+// SumTotalCostSubscriptions calculate total cost of a user's subscriptions for a given period and service.
+// @Summary Calculate total subscription cost
+// @Description Calculates the total cost of a user's subscriptions for a given period, filtered by user ID and service name. The period dates must be in "MM-YYYY" format.
+// @Produce json
+// @Param user_id query string true "User ID"
+// @Param service_name query string true "Service name"
+// @Param period_start query string true "Start date of the period (MM-YYYY)"
+// @Param period_end query string false "End date of the period (MM-YYYY)"
+// @Success 200 {object} map[string]int "Total cost calculated successfully"
+// @Failure 400 {string} string "Invalid parameters"
+// @Failure 500 {string} string "Could not calculate total cost"
+// @Router /subscriptions/total-cost [get]
 func (h *SubscriptionsHandler) SumTotalCostSubscriptions(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {

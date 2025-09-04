@@ -4,14 +4,21 @@ import (
 	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"net/http"
 	"os"
+	_ "subscription-aggregator/api/docs"
 	"subscription-aggregator/internal/config"
 	"subscription-aggregator/internal/db/postgres"
 	"subscription-aggregator/internal/handlers"
 	"subscription-aggregator/internal/logger"
 )
 
+// @title Subscription Aggregator API
+// @version 1.0
+// @description REST service for aggregating data about users' online subscriptions
+// @host localhost:8080
+// @BasePath '/'
 func main() {
 	log := logger.NewLogger()
 
@@ -44,6 +51,10 @@ func main() {
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Service start"))
 	})
+
+	router.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+	))
 
 	router.Route("/subscriptions", func(r chi.Router) {
 		r.Post("/", subscriptionHandler.CreateSubscription)
