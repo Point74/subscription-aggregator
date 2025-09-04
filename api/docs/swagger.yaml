@@ -1,0 +1,8 @@
+host: localhost:8080
+info:
+  contact: {}
+  description: REST service for aggregating data about users' online subscriptions
+  title: Subscription Aggregator API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

@@ -18,7 +18,6 @@ import (
 // @version 1.0
 // @description REST service for aggregating data about users' online subscriptions
 // @host localhost:8080
-// @BasePath '/'
 func main() {
 	log := logger.NewLogger()
 
